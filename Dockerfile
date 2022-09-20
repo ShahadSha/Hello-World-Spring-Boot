@@ -1,9 +1,7 @@
 FROM maven:3.6.1-jdk-8-alpine as Build
 COPY ./pom.xml ./pom.xml
 COPY ./src ./src
-RUN mvn dependency:go-offline -B
-RUN mvn package
-
+RUN mvn clean install
 
 FROM openjdk:8u171-jre-alpine
 WORKDIR /CICD to Kubernetes Deployment
