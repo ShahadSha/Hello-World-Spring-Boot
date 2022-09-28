@@ -17,8 +17,10 @@ pipeline {
         '''
     }
   }
+  tools {
+    maven 'MAVEN_LOCAL'
+  }
   stages {
-
     stage('Run maven') {
       steps {
         checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]])
@@ -28,12 +30,20 @@ pipeline {
       }
     }
     stage('SonarQube analysis') {
-        stage('SonarQube analysis') {
-          withSonarQubeEnv(credentialsId: 'f225455e-ea59-40fa-8af7-08176e86507a', installationName: 'My SonarQube Server') { // You can override the credential to be used
-            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.7.0.1746:sonar'
-          }
+        steps {
+            withSonarQubeEnv('sonarqube') { // You can override the credential to be used
+                    sh 'mvn clean verify sonar:sonar'
+                } 
+            
         }
     }
+    stage("Quality Gate") {
+            steps {
+                timeout(time: 1, unit: 'HOURS') {
+                    waitForQualityGate abortPipeline: true
+              }
+          }
+      }
 
 
 
