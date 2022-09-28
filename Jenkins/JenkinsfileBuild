@@ -1,56 +1,46 @@
 pipeline {
-    agent any 
-    
-    tools {
-        maven 'MAVEN_HOME'
+  agent {
+    kubernetes {
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          labels:
+            some-label: some-label-value
+        spec:
+          containers:
+          - name: maven
+            image: maven:alpine
+            command:
+            - cat
+            tty: true
+        '''
     }
-    stages {
-        stage("Build Maven") {
-            steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]])
-                sh "mvn clean install"
-            }
-        }
+  }
+  stages {
 
-        stage("Build Docker Image") {
-            steps {
-                script {
-                    sh 'docker build -t hello-world .'
-                }
-            }
-        }
-        stage("AWS ECR Login") {
-            steps {
-                script {
-                    sh 'aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws'
-                }
-            }
-        }
-        stage("AWS ECR Push") {
-            steps {
-                script {
-                    sh 'docker tag maven-docker:latest public.ecr.aws/x3x3m9h6/maven-docker:${BUILD_NUMBER}'
-                    sh 'docker push public.ecr.aws/x3x3m9h6/maven-docker:${BUILD_NUMBER}'
-                }
-            }
-        }
-        stage("Helm Chart ECR Push") {
-            steps {
-                sh "echo version : 1.${BUILD_NUMBER}.1 >> java-helm/Chart.yaml"
-                sh 'helm package java-helm'
-                sh 'aws ecr-public get-login-password --region us-east-1 | helm registry login --username AWS --password-stdin public.ecr.aws'
-                sh 'helm push java-helm-1.${BUILD_NUMBER}.1.tgz oci://public.ecr.aws/x3x3m9h6/'
-                sh 'rm -rf java-helm-*'
-            }
-        }
-        stage("Invoking Pipeline B") {
-            steps {
-                script {
-                    build job: 'Pipeline-B', parameters: [[$class: 'StringParameterValue', name: 'buildnum', value:  "${BUILD_NUMBER}"]]
-                }
-            }
-        }
-
-        
+    stage('Run maven') {
+      steps {
+        checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]])
+        // container('maven') {
+        //   sh 'mvn clean install'
+        // } 
+      }
     }
+    stage('SonarQube analysis') {
+        stage('SonarQube analysis') {
+          withSonarQubeEnv(credentialsId: 'f225455e-ea59-40fa-8af7-08176e86507a', installationName: 'My SonarQube Server') { // You can override the credential to be used
+            sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.7.0.1746:sonar'
+          }
+        }
+    }
+
+
+
+
+
+
+
+
+  }
 }
