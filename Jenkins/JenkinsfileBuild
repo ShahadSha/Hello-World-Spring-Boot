@@ -21,25 +21,22 @@ pipeline {
     maven 'MAVEN_LOCAL'
   }
   stages {
-    stage('Run maven') {
+    stage('Github Clone') {
       steps {
-        checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]])
-        // container('maven') {
-        //   sh 'mvn clean install'
-        // } 
+        checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]]) 
       }
     }
     stage('SonarQube analysis') {
         steps {
             withSonarQubeEnv('sonarqube') { // You can override the credential to be used
-                    sh 'mvn clean verify sonar:sonar'
+                    sh 'mvn clean package sonar:sonar'
                 } 
             
         }
     }
     stage("Quality Gate") {
             steps {
-                timeout(time: 1, unit: 'HOURS') {
+                timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
               }
           }
