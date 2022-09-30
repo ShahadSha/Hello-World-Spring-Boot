@@ -1,0 +1,86 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml '''
+kind: Pod
+metadata:
+  labels:
+    some-label: some-label-value
+spec:
+  containers:
+  - name: dependency
+    image: shahadsha/dep-alpine:latest
+    command:
+    - cat
+    tty: true
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    imagePullPolicy: Always
+    command:
+    - sleep
+    args:
+    - 9999999
+    volumeMounts:
+      - name: jenkins-docker-cfg
+        mountPath: /kaniko/.docker
+  volumes:
+  - name: jenkins-docker-cfg
+    projected:
+      sources:
+      - secret:
+          name: docker-credentials
+          items:
+            - key: .dockerconfigjson
+              path: config.json
+'''
+    }
+  }
+
+  stages {
+
+      stage('Github Clone') {
+          steps {
+            checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]]) 
+          }
+      }
+
+      // stage('SonarQube analysis') {
+      //     steps {
+      //         container('dependency') {
+      //             withSonarQubeEnv('sonarqube') { // You can override the credential to be used
+      //                     sh 'mvn clean package sonar:sonar'
+      //             } 
+      //         }
+      //     }
+      // }
+
+      // stage("Quality Gate") {
+      //     steps {
+      //         timeout(time: 2, unit: 'MINUTES') {
+      //             waitForQualityGate abortPipeline: true
+      //         }
+      //     }
+      // }
+      
+      stage('Build Docker Image with Kaniko') {
+          steps {
+            container(name: 'kaniko', shell: '/busybox/sh') {
+              sh '''#!/busybox/sh
+
+                /kaniko/executor --context `pwd` --destination shahadsha/hello-world:$BUILD_NUMBER
+              '''
+            }
+          }
+      }
+
+      stage('Deploy') {
+            steps {
+                build job: 'spring hello deploy', parameters: [string(name: 'JOB', value: "${BUILD_NUMBER}")] 
+            }
+      }
+      
+
+      
+
+  }
+}
