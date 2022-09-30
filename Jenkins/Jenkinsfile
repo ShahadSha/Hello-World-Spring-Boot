@@ -19,7 +19,7 @@ spec:
     command:
     - sleep
     args:
-    - 9999999
+    - 99d
     volumeMounts:
       - name: jenkins-docker-cfg
         mountPath: /kaniko/.docker
@@ -44,30 +44,29 @@ spec:
           }
       }
 
-      // stage('SonarQube analysis') {
-      //     steps {
-      //         container('dependency') {
-      //             withSonarQubeEnv('sonarqube') { // You can override the credential to be used
-      //                     sh 'mvn clean package sonar:sonar'
-      //             } 
-      //         }
-      //     }
-      // }
+      stage('SonarQube analysis') {
+          steps {
+              container('dependency') {
+                  withSonarQubeEnv('sonarqube') { // You can override the credential to be used
+                          sh 'mvn clean package sonar:sonar'
+                  } 
+              }
+          }
+      }
 
-      // stage("Quality Gate") {
-      //     steps {
-      //         timeout(time: 2, unit: 'MINUTES') {
-      //             waitForQualityGate abortPipeline: true
-      //         }
-      //     }
-      // }
+      stage("Quality Gate") {
+          steps {
+              timeout(time: 2, unit: 'MINUTES') {
+                  waitForQualityGate abortPipeline: true
+              }
+          }
+      }
       
       stage('Build Docker Image with Kaniko') {
           steps {
             container(name: 'kaniko', shell: '/busybox/sh') {
-              sh '''#!/busybox/sh
-
-                /kaniko/executor --context `pwd` --destination shahadsha/hello-world:$BUILD_NUMBER
+              sh ''' #!/busybox/sh
+                    /kaniko/executor --context `pwd` --destination shahadsha/hello-world:$BUILD_NUMBER
               '''
             }
           }
