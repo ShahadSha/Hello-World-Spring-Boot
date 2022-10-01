@@ -13,10 +13,10 @@ spec:
         app: {{ .Release.Name }}-helloworld
     spec:
       containers:
-        - name: springboot-helloworld
-          image: {{ .Values.image.repository }} : {{ .Values.image.tag }}
-          ports:
-            - containerPort: {{ .Values.image.port }}
+      - name: springboot-helloworld
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        ports:
+        - containerPort: {{ .Values.image.port }}
 ---
 apiVersion: v1
 kind: Service
