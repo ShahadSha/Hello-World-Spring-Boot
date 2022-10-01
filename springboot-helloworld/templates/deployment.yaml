@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-helloworld
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-helloworld
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-helloworld
+    spec:
+      containers:
+        - name: springboot-helloworld
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          ports:
+            - containerPort: {{ .Values.image.port }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-helloworld
+spec:
+  type: NodePort
+  selector:
+    app: {{ .Release.Name }}-helloworld
+  ports:
+  - port: 80
+    targetPort: {{ .Values.image.port }}
+    protocol: TCP

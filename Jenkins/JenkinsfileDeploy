@@ -1,0 +1,45 @@
+pipeline {
+  agent {
+    kubernetes {
+      yaml '''
+kind: Pod
+metadata:
+  labels:
+    some-label: some-label-value
+spec:
+  containers:
+  - name: dependency
+    image: shahadsha/dep-alpine:latest
+    command:
+    - cat
+    tty: true
+  - name: helm
+    image: alpine/helm:3.10.0
+    command:
+    - cat
+    tty: true
+'''
+    }
+  }
+    stages {
+        stage('Blue version') {
+            steps {
+                container('helm') {
+                    withKubeConfig(credentialsId: 'serviceaccount', serverUrl: '') {
+                        script {
+                            try {
+                                sh "helm upgrade staging --set image.tag=${params.JOB} springboot-helloworld"
+                            }
+                            catch (err) {
+                                sh "helm install staging --set image.tag=${params.JOB} springboot-helloworld"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        
+    }
+}
+
