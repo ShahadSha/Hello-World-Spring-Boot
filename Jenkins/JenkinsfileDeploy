@@ -22,8 +22,9 @@ spec:
     }
   }
     stages {
-        stage('Blue version') {
+        stage('Blue version Deploy') {
             steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/ShahadSha/Hello-World-Spring-Boot']]]) 
                 container('helm') {
                     withKubeConfig(credentialsId: 'serviceaccount', serverUrl: '') {
                         script {
@@ -32,6 +33,22 @@ spec:
                             }
                             catch (err) {
                                 sh "helm install staging --set image.tag=${params.JOB} springboot-helloworld"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('Green version') {
+            steps {
+                container('helm') {
+                    withKubeConfig(credentialsId: 'serviceaccount', serverUrl: '') {
+                        script {
+                            try {
+                                sh "helm upgrade production --set image.tag=${params.JOB} springboot-helloworld"
+                            }
+                            catch (err) {
+                                sh "helm install production --set image.tag=${params.JOB} springboot-helloworld"
                             }
                         }
                     }
