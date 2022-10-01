@@ -74,7 +74,7 @@ spec:
 
       stage('Deploy') {
             steps {
-                build job: 'spring hello deploy', parameters: [string(name: 'JOB', value: "${BUILD_NUMBER}")] 
+                build job: 'Spring-Hello-World-Deploy', parameters: [string(name: 'JOB', value: "${BUILD_NUMBER}")] 
             }
       }
       
